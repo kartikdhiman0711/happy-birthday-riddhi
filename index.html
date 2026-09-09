@@ -43,6 +43,7 @@ body::-webkit-scrollbar{display:none;}
 #intro{background:radial-gradient(circle at 50% 18%, #fff3f7 0%, var(--cream) 68%);}
 #cake{background:radial-gradient(circle at 50% 28%, #fff9ef 0%, var(--cream) 68%);}
 #game{background:radial-gradient(circle at 50% 24%, #f6efff 0%, var(--cream) 68%);}
+#memory{background:radial-gradient(circle at 50% 30%, #fff5ee 0%, var(--cream) 68%);}
 #wish{background:radial-gradient(circle at 50% 42%, #fff3f7 0%, var(--cream) 68%);}
 #outro{background:radial-gradient(circle at 50% 60%, #fbf3ff 0%, var(--cream) 68%);}
 
@@ -389,6 +390,59 @@ body::-webkit-scrollbar{display:none;}
   box-shadow:0 8px 18px rgba(255,127,168,0.35);
 }
 
+/* ---------- MEMORY SCREEN ---------- */
+#memory h2{
+  font-family:'Playfair Display',serif;
+  font-size:1.6rem;
+  margin-bottom:6px;
+  z-index:5;
+}
+#memory .sub{font-size:0.85rem;opacity:0.65;margin-bottom:20px;max-width:320px;z-index:5;line-height:1.6;}
+
+.doodle-pad-wrap{
+  position:relative;
+  z-index:5;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+}
+.doodle-canvas{
+  width:300px;height:190px;
+  border-radius:26px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 27px, rgba(90,67,86,0.08) 27px 28px),
+    linear-gradient(160deg,#fffaf2,#fff1e2);
+  box-shadow:0 20px 44px rgba(230,180,140,0.28), inset 0 0 0 1px rgba(255,255,255,0.7);
+  cursor:crosshair;
+  touch-action:none;
+}
+.doodle-hint{
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  font-family:'Pacifico',cursive;
+  font-size:1rem;
+  color:rgba(90,67,86,0.28);
+  pointer-events:none;
+  transition:opacity 0.4s;
+  z-index:7;
+}
+.doodle-hint.hide{opacity:0;}
+.doodle-actions{display:flex;gap:10px;z-index:5;}
+.clear-doodle-btn, .memory-continue-btn{
+  background:transparent;border:2px solid var(--pink-deep);color:var(--pink-deep);
+  padding:8px 20px;border-radius:50px;font-weight:600;font-size:0.85rem;cursor:pointer;
+  transition:all 0.3s;
+}
+.memory-continue-btn{
+  background:linear-gradient(135deg,var(--pink-deep),var(--gold));
+  color:white;border:none;
+  box-shadow:0 8px 18px rgba(255,127,168,0.35);
+}
+.clear-doodle-btn:hover{background:var(--pink-deep);color:white;}
+.memory-caption{
+  z-index:5;margin-top:6px;font-size:0.85rem;opacity:0.6;
+  font-family:'Playfair Display',serif;font-style:italic;max-width:300px;
+}
+
 /* ---------- WISH SCREEN ---------- */
 .message-card{
   z-index:5;
@@ -433,6 +487,7 @@ body::-webkit-scrollbar{display:none;}
   <div class="dot active" data-target="intro"></div>
   <div class="dot" data-target="cake"></div>
   <div class="dot" data-target="game"></div>
+  <div class="dot" data-target="memory"></div>
   <div class="dot" data-target="wish"></div>
   <div class="dot" data-target="outro"></div>
 </div>
@@ -483,6 +538,22 @@ body::-webkit-scrollbar{display:none;}
     <button class="start-game-btn" id="startGameBtn">Start catching ➜</button>
     <div class="game-result" id="gameResult"></div>
   </div>
+</section>
+
+<section class="screen" id="memory">
+  <h2>Leave your mark ✍️</h2>
+  <div class="sub">remember all those hours we spent doodling on each other's arms, mid-conversation, mid-everything?</div>
+  <div class="doodle-pad-wrap">
+    <div style="position:relative;">
+      <canvas class="doodle-canvas" id="doodleCanvas"></canvas>
+      <div class="doodle-hint" id="doodleHint">draw here, like always</div>
+    </div>
+    <div class="doodle-actions">
+      <button class="clear-doodle-btn" id="clearDoodleBtn">clear ↻</button>
+      <button class="memory-continue-btn" id="memoryContinueBtn">Read my letter ➜</button>
+    </div>
+  </div>
+  <p class="memory-caption">some things don't need a reason - they're just ours.</p>
 </section>
 
 <section class="screen" id="wish">
@@ -861,7 +932,7 @@ function endGame(){
   gameResult.innerHTML = `<h3>You caught ${gameScore} wishes!</h3><p>${msg}</p><button class="continue-game-btn" id="continueGameBtn">Continue ➜</button>`;
   gameResult.classList.add('show');
   document.getElementById('continueGameBtn').addEventListener('click', ()=>{
-    document.getElementById('wish').scrollIntoView({behavior:'smooth'});
+    document.getElementById('memory').scrollIntoView({behavior:'smooth'});
   });
 }
 
@@ -878,6 +949,63 @@ function resetGame(){
   gameResult.classList.remove('show');
   gameResult.innerHTML = '';
 }
+
+/* ================= MEMORY: doodle pad ================= */
+const doodleCanvas = document.getElementById('doodleCanvas');
+const doodleCtx = doodleCanvas.getContext('2d');
+const doodleHint = document.getElementById('doodleHint');
+
+function sizeDoodleCanvas(){
+  doodleCanvas.width = doodleCanvas.clientWidth;
+  doodleCanvas.height = doodleCanvas.clientHeight;
+  doodleCtx.lineWidth = 2.6;
+  doodleCtx.lineCap = 'round';
+  doodleCtx.lineJoin = 'round';
+  doodleCtx.strokeStyle = '#5a4356';
+}
+sizeDoodleCanvas();
+window.addEventListener('resize', sizeDoodleCanvas);
+
+let doodling=false, dLastX=0, dLastY=0;
+function doodlePos(e){
+  const rect = doodleCanvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {x:clientX-rect.left, y:clientY-rect.top};
+}
+function doodleStart(e){
+  doodling = true;
+  doodleHint.classList.add('hide');
+  const p = doodlePos(e);
+  dLastX=p.x; dLastY=p.y;
+  doodleCtx.beginPath();
+  doodleCtx.moveTo(dLastX,dLastY);
+}
+function doodleMove(e){
+  if(!doodling) return;
+  if(e.cancelable) e.preventDefault();
+  const p = doodlePos(e);
+  doodleCtx.lineTo(p.x,p.y);
+  doodleCtx.stroke();
+  dLastX=p.x; dLastY=p.y;
+}
+function doodleEnd(){ doodling=false; }
+
+doodleCanvas.addEventListener('mousedown', doodleStart);
+doodleCanvas.addEventListener('mousemove', doodleMove);
+doodleCanvas.addEventListener('mouseup', doodleEnd);
+doodleCanvas.addEventListener('mouseleave', doodleEnd);
+doodleCanvas.addEventListener('touchstart', doodleStart, {passive:false});
+doodleCanvas.addEventListener('touchmove', doodleMove, {passive:false});
+doodleCanvas.addEventListener('touchend', doodleEnd);
+
+document.getElementById('clearDoodleBtn').addEventListener('click', ()=>{
+  doodleCtx.clearRect(0,0,doodleCanvas.width,doodleCanvas.height);
+  doodleHint.classList.remove('hide');
+});
+document.getElementById('memoryContinueBtn').addEventListener('click', ()=>{
+  document.getElementById('wish').scrollIntoView({behavior:'smooth'});
+});
 
 /* ================= TYPEWRITER ================= */
 let typed=false;
@@ -899,6 +1027,8 @@ function startTypewriter(){
 document.getElementById('replayBtn').addEventListener('click', ()=>{
   resetCandles();
   resetGame();
+  doodleCtx.clearRect(0,0,doodleCanvas.width,doodleCanvas.height);
+  doodleHint.classList.remove('hide');
   cakeContinueBtn.classList.remove('show');
   giftWrap.classList.remove('opened');
   revealText.classList.remove('show');
