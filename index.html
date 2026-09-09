@@ -40,6 +40,16 @@ body::-webkit-scrollbar{display:none;}
   padding:30px;
   overflow:hidden;
 }
+#intro{background:radial-gradient(circle at 50% 18%, #fff3f7 0%, var(--cream) 68%);}
+#cake{background:radial-gradient(circle at 50% 28%, #fff9ef 0%, var(--cream) 68%);}
+#game{background:radial-gradient(circle at 50% 24%, #f6efff 0%, var(--cream) 68%);}
+#wish{background:radial-gradient(circle at 50% 42%, #fff3f7 0%, var(--cream) 68%);}
+#outro{background:radial-gradient(circle at 50% 60%, #fbf3ff 0%, var(--cream) 68%);}
+
+@media (prefers-reduced-motion: reduce){
+  .petal, .flame, .reveal-text, .tap-hint{animation:none !important;}
+  *{scroll-behavior:auto !important;}
+}
 
 /* ---------- background ambience (shared) ---------- */
 #bg-decor{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
@@ -283,6 +293,102 @@ body::-webkit-scrollbar{display:none;}
   text-shadow:0 4px 20px rgba(255,255,255,0.9);
 }
 
+/* ---------- GAME SCREEN ---------- */
+#game h2{
+  font-family:'Playfair Display',serif;
+  font-size:1.7rem;
+  margin-bottom:6px;
+  z-index:5;
+}
+#game .sub{font-size:0.85rem;opacity:0.65;margin-bottom:18px;z-index:5;}
+
+.game-stage{
+  position:relative;
+  z-index:5;
+  width:100%;
+  max-width:320px;
+  height:min(48vh,380px);
+  min-height:280px;
+  margin:0 auto;
+  border-radius:28px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.5), rgba(255,255,255,0.15));
+  border:1px solid rgba(255,255,255,0.6);
+  box-shadow:0 20px 46px rgba(190,150,220,0.28);
+  overflow:hidden;
+  backdrop-filter:blur(8px);
+}
+.game-hud{
+  position:absolute;top:14px;left:0;right:0;
+  display:flex;justify-content:center;gap:10px;
+  z-index:8;
+}
+.hud-chip{
+  background:rgba(255,255,255,0.8);
+  padding:5px 13px;border-radius:50px;
+  font-size:0.82rem;font-weight:600;
+  color:var(--ink);
+  box-shadow:0 4px 10px rgba(0,0,0,0.08);
+}
+.start-game-btn{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  z-index:9;
+  background:linear-gradient(135deg,var(--pink-deep),var(--lavender));
+  color:#fff;border:none;
+  padding:12px 26px;border-radius:50px;
+  font-weight:600;font-size:0.92rem;cursor:pointer;
+  box-shadow:0 10px 24px rgba(180,127,255,0.4);
+  transition:opacity 0.3s, transform 0.3s;
+}
+.start-game-btn.hide{opacity:0;pointer-events:none;transform:translate(-50%,-50%) scale(0.8);}
+.wish-item{
+  position:absolute;
+  bottom:-40px;
+  font-size:1.7rem;
+  line-height:1;
+  cursor:pointer;
+  user-select:none;
+  animation-name:floatUp;
+  animation-timing-function:linear;
+  animation-fill-mode:forwards;
+  filter:drop-shadow(0 4px 8px rgba(255,120,160,0.25));
+  z-index:6;
+}
+@keyframes floatUp{
+  0%{transform:translateY(0) translateX(0) scale(1); opacity:1;}
+  100%{transform:translateY(-360px) translateX(var(--sway)) scale(1.05); opacity:0;}
+}
+.wish-item.popped{
+  animation:none !important;
+  transition:transform 0.35s ease, opacity 0.35s ease;
+  transform:scale(2.1) !important;
+  opacity:0 !important;
+  pointer-events:none;
+}
+.game-result{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;
+  background:rgba(255,248,240,0.92);
+  opacity:0;pointer-events:none;
+  transition:opacity 0.5s;
+  z-index:10;
+  text-align:center;
+  padding:24px;
+}
+.game-result.show{opacity:1;pointer-events:auto;}
+.game-result h3{
+  font-family:'Pacifico',cursive;
+  font-size:1.5rem;color:var(--pink-deep);
+}
+.game-result p{font-size:0.88rem;opacity:0.75;max-width:240px;line-height:1.5;}
+.continue-game-btn{
+  background:linear-gradient(135deg,var(--pink-deep),var(--gold));
+  color:white;border:none;padding:10px 24px;border-radius:50px;
+  font-weight:600;font-size:0.9rem;cursor:pointer;
+  box-shadow:0 8px 18px rgba(255,127,168,0.35);
+}
+
 /* ---------- WISH SCREEN ---------- */
 .message-card{
   z-index:5;
@@ -326,6 +432,7 @@ body::-webkit-scrollbar{display:none;}
 <div class="dots">
   <div class="dot active" data-target="intro"></div>
   <div class="dot" data-target="cake"></div>
+  <div class="dot" data-target="game"></div>
   <div class="dot" data-target="wish"></div>
   <div class="dot" data-target="outro"></div>
 </div>
@@ -360,7 +467,21 @@ body::-webkit-scrollbar{display:none;}
   </div>
   <div class="mic-controls">
     <button class="mic-btn" id="micBtn">🎤 Blow to light the moment</button>
-    <div class="mic-hint">(mic optional — tapping works too)</div>
+    <div class="mic-hint">(mic optional - tapping works too)</div>
+  </div>
+  <button class="continue-btn" id="cakeContinueBtn">One more thing ➜</button>
+</section>
+
+<section class="screen" id="game">
+  <h2>Catch a wish, Riddhi 🌠</h2>
+  <div class="sub">tap the little wishes before they drift away</div>
+  <div class="game-stage" id="gameStage">
+    <div class="game-hud">
+      <div class="hud-chip">⏱ <span id="gameTime">15</span>s</div>
+      <div class="hud-chip">✨ <span id="gameScore">0</span></div>
+    </div>
+    <button class="start-game-btn" id="startGameBtn">Start catching ➜</button>
+    <div class="game-result" id="gameResult"></div>
   </div>
 </section>
 
@@ -580,7 +701,7 @@ micBtn.addEventListener('click', async ()=>{
     micBtn.textContent = '🎤 Listening... blow now!';
     monitorMic();
   }catch(err){
-    micBtn.textContent = '🎤 Mic unavailable — tap candles instead';
+    micBtn.textContent = '🎤 Mic unavailable - tap candles instead';
   }
 });
 
@@ -659,14 +780,108 @@ function celebrate(){
         ctx.clearRect(0,0,canvas.width,canvas.height);
         canvas.style.display='none';
         wishOverlay.classList.remove('show');
+        cakeContinueBtn.classList.add('show');
       }, 2600);
     }
   }, 380);
 }
 
+const cakeContinueBtn = document.getElementById('cakeContinueBtn');
+cakeContinueBtn.addEventListener('click', ()=>{
+  document.getElementById('game').scrollIntoView({behavior:'smooth'});
+});
+
+/* ================= MINI GAME: catch the wish ================= */
+const gameStage = document.getElementById('gameStage');
+const startGameBtn = document.getElementById('startGameBtn');
+const gameScoreEl = document.getElementById('gameScore');
+const gameTimeEl = document.getElementById('gameTime');
+const gameResult = document.getElementById('gameResult');
+const wishEmojis = ['⭐','💫','✨','🌟','🎐','💛'];
+const GAME_DURATION = 15;
+let gameActive=false, gameScore=0, gameTimeLeft=GAME_DURATION, gameSpawnId=null, gameTickId=null;
+
+startGameBtn.addEventListener('click', async ()=>{
+  await initAudio();
+  startGame();
+});
+
+function startGame(){
+  gameActive = true;
+  gameScore = 0;
+  gameTimeLeft = GAME_DURATION;
+  gameScoreEl.textContent = gameScore;
+  gameTimeEl.textContent = gameTimeLeft;
+  startGameBtn.classList.add('hide');
+  gameResult.classList.remove('show');
+  gameResult.innerHTML = '';
+
+  gameSpawnId = setInterval(spawnWish, 650);
+  gameTickId = setInterval(()=>{
+    gameTimeLeft--;
+    gameTimeEl.textContent = Math.max(gameTimeLeft,0);
+    if(gameTimeLeft<=0) endGame();
+  }, 1000);
+}
+
+function spawnWish(){
+  if(!gameActive) return;
+  const el = document.createElement('div');
+  el.className='wish-item';
+  el.textContent = wishEmojis[Math.floor(Math.random()*wishEmojis.length)];
+  el.style.left = (8 + Math.random()*78)+'%';
+  el.style.setProperty('--sway', (Math.random()*60-30)+'px');
+  const dur = 3.0 + Math.random()*1.6;
+  el.style.animationDuration = dur+'s';
+  el.addEventListener('click', ()=>popWish(el));
+  gameStage.appendChild(el);
+  setTimeout(()=>{ if(el.parentNode && !el.classList.contains('popped')) el.remove(); }, dur*1000+80);
+}
+
+function popWish(el){
+  if(!gameActive || el.classList.contains('popped')) return;
+  el.classList.add('popped');
+  gameScore++;
+  gameScoreEl.textContent = gameScore;
+  playWhoosh();
+  const rect = el.getBoundingClientRect();
+  spawnConfettiBurst(rect.left+rect.width/2, rect.top+rect.height/2, 9);
+  setTimeout(()=>{ if(el.parentNode) el.remove(); }, 380);
+}
+
+function endGame(){
+  gameActive = false;
+  clearInterval(gameSpawnId);
+  clearInterval(gameTickId);
+  gameStage.querySelectorAll('.wish-item').forEach(el=>el.remove());
+  let msg;
+  if(gameScore>=18) msg = "the stars themselves are impressed by your speed.";
+  else if(gameScore>=10) msg = "a whole handful of wishes, caught mid-air.";
+  else msg = "every wish you caught is already on its way to coming true.";
+  gameResult.innerHTML = `<h3>You caught ${gameScore} wishes!</h3><p>${msg}</p><button class="continue-game-btn" id="continueGameBtn">Continue ➜</button>`;
+  gameResult.classList.add('show');
+  document.getElementById('continueGameBtn').addEventListener('click', ()=>{
+    document.getElementById('wish').scrollIntoView({behavior:'smooth'});
+  });
+}
+
+function resetGame(){
+  gameActive = false;
+  clearInterval(gameSpawnId);
+  clearInterval(gameTickId);
+  gameStage.querySelectorAll('.wish-item').forEach(el=>el.remove());
+  gameScore = 0;
+  gameTimeLeft = GAME_DURATION;
+  gameScoreEl.textContent = 0;
+  gameTimeEl.textContent = GAME_DURATION;
+  startGameBtn.classList.remove('hide');
+  gameResult.classList.remove('show');
+  gameResult.innerHTML = '';
+}
+
 /* ================= TYPEWRITER ================= */
 let typed=false;
-const fullMessage = "Wishing you a day as bright and lovely as your spirit. May this year hand you more reasons to laugh, more moments that feel like magic, and more of everything that makes you, you. Thank you for the warmth you bring into every room you walk into. Here's to you, Riddhi — have the most beautiful birthday. 💕";
+const fullMessage = "Wishing you a day as bright and lovely as your spirit. May this year hand you more reasons to laugh, more moments that feel like magic, and more of everything that makes you, you. Thank you for the warmth you bring into every room you walk into. Here's to you, Riddhi - have the most beautiful birthday. 💕";
 function startTypewriter(){
   if(typed) return;
   typed = true;
@@ -683,6 +898,8 @@ function startTypewriter(){
 /* ================= REPLAY ================= */
 document.getElementById('replayBtn').addEventListener('click', ()=>{
   resetCandles();
+  resetGame();
+  cakeContinueBtn.classList.remove('show');
   giftWrap.classList.remove('opened');
   revealText.classList.remove('show');
   continueBtn.classList.remove('show');
